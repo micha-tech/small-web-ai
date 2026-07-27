@@ -1,6 +1,12 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import {
+  FormEvent,
+  KeyboardEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 type Message = {
   id: number;
@@ -11,26 +17,56 @@ type Message = {
 const welcomeMessage: Message = {
   id: 0,
   role: "model",
-  content: "Hello. I am Michael. What would you like to explore?",
+  content:
+    "Welcome to Sentient AI. I’m ready to help you analyze complex information, plan decisive action, and turn ambiguity into an operating advantage.",
 };
+
+const prompts = [
+  {
+    index: "01",
+    title: "Analyze a complex decision",
+    detail: "Surface tradeoffs, risks, and the strongest path forward.",
+    prompt:
+      "Help me analyze a complex decision. Start by asking me for the context, constraints, and desired outcome.",
+  },
+  {
+    index: "02",
+    title: "Build an operating plan",
+    detail: "Turn an objective into milestones, owners, and next actions.",
+    prompt:
+      "Help me build an operating plan. Start by asking for the objective, timeline, stakeholders, and constraints.",
+  },
+  {
+    index: "03",
+    title: "Synthesize intelligence",
+    detail: "Distill scattered information into a clear executive brief.",
+    prompt:
+      "Help me synthesize a set of information into an executive brief. Ask me to provide the source material first.",
+  },
+];
 
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([welcomeMessage]);
   const [prompt, setPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const endOfConversationRef = useRef<HTMLDivElement>(null);
 
-  async function sendMessage(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  useEffect(() => {
+    endOfConversationRef.current?.scrollIntoView({
+      behavior: messages.length > 2 ? "smooth" : "auto",
+    });
+  }, [isLoading, messages]);
 
-    const content = prompt.trim();
-    if (!content || isLoading) {
+  async function submitMessage(content: string) {
+    const nextPrompt = content.trim();
+    if (!nextPrompt || isLoading) {
       return;
     }
 
     const userMessage: Message = {
       id: Date.now(),
       role: "user",
-      content,
+      content: nextPrompt,
     };
     const nextMessages = [...messages, userMessage];
 
@@ -57,7 +93,7 @@ export default function Home() {
 
       const reply = result.message;
       if (!response.ok || !reply) {
-        throw new Error(result.error || "Michael could not respond just now.");
+        throw new Error(result.error || "Sentient AI could not respond just now.");
       }
 
       setMessages((currentMessages) => [
@@ -73,7 +109,7 @@ export default function Home() {
           content:
             error instanceof Error
               ? error.message
-              : "Michael could not respond just now.",
+              : "Sentient AI could not respond just now.",
         },
       ]);
     } finally {
@@ -81,90 +117,238 @@ export default function Home() {
     }
   }
 
+  function sendMessage(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void submitMessage(prompt);
+  }
+
+  function handleComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      void submitMessage(prompt);
+    }
+  }
+
+  function startNewConversation() {
+    setMessages([welcomeMessage]);
+    setPrompt("");
+  }
+
+  const hasStartedConversation = messages.length > 1;
+
   return (
-    <main className="min-h-svh bg-[#f4f5f1] px-4 py-5 text-[#17221c] sm:px-8 sm:py-8">
-      <div className="mx-auto flex min-h-[calc(100svh-2.5rem)] max-w-3xl flex-col rounded-[2rem] border border-[#d9ded6] bg-[#fbfcf9] shadow-[0_22px_70px_rgba(28,44,34,0.08)] sm:min-h-[calc(100svh-4rem)]">
-        <header className="flex items-center justify-between border-b border-[#e1e5dd] px-6 py-5 sm:px-8">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-full bg-[#1f4d38] font-serif text-xl text-[#f7f2e8]">
-              M
+    <main className="app-shell">
+      <aside className="side-rail">
+        <div className="brand">
+          <div className="brand-mark" aria-hidden="true">
+            <span />
+          </div>
+          <div className="brand-copy">
+            <strong>SENTIENT AI</strong>
+            <span>By Sentient Engineering</span>
+          </div>
+        </div>
+
+        <button className="new-thread-button" onClick={startNewConversation}>
+          <span className="button-icon" aria-hidden="true">
+            +
+          </span>
+          <span>New conversation</span>
+          <kbd>⌘ N</kbd>
+        </button>
+
+        <div className="rail-section">
+          <p className="rail-label">System capabilities</p>
+          <div className="capability-list">
+            <div>
+              <span className="capability-indicator" />
+              <p>
+                <strong>Strategic analysis</strong>
+                <span>Decision support and synthesis</span>
+              </p>
             </div>
             <div>
-              <h1 className="font-serif text-2xl leading-none tracking-tight">MICHAEL</h1>
-              <p className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-[#68736c]">
-                Gemini conversation
+              <span className="capability-indicator" />
+              <p>
+                <strong>Operational planning</strong>
+                <span>Structured plans and execution</span>
+              </p>
+            </div>
+            <div>
+              <span className="capability-indicator" />
+              <p>
+                <strong>Knowledge work</strong>
+                <span>Research, writing, and reasoning</span>
               </p>
             </div>
           </div>
-          <span className="flex items-center gap-2 text-sm text-[#587061]">
-            <span className="size-2 rounded-full bg-[#6b9b70]" />
-            Online
-          </span>
+        </div>
+
+        <div className="rail-footer">
+          <div className="rail-status">
+            <span className="status-pulse" />
+            <div>
+              <strong>Runtime configured</strong>
+              <span>Server-managed model access</span>
+            </div>
+          </div>
+          <p>Sentient Engineering / SI-01</p>
+        </div>
+      </aside>
+
+      <section className="workspace">
+        <header className="command-bar">
+          <div className="mobile-brand">
+            <div className="brand-mark" aria-hidden="true">
+              <span />
+            </div>
+            <strong>SENTIENT AI</strong>
+          </div>
+          <div className="workspace-title">
+            <span>Workspace</span>
+            <span className="breadcrumb-divider">/</span>
+            <strong>General intelligence</strong>
+          </div>
+          <div className="command-status">
+            <span className="secure-badge">
+              <span className="secure-dot" />
+              Server key
+            </span>
+            <span className="session-id">SESSION / LIVE</span>
+          </div>
         </header>
 
-        <section className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-8 sm:px-12 sm:py-10" aria-live="polite">
-          {messages.map((message) => (
-            <article
-              className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
-              key={message.id}
-            >
-              {message.role === "model" && (
-                <div className="mt-1 flex size-7 shrink-0 items-center justify-center rounded-full bg-[#dbe8da] font-serif text-sm text-[#29533e]">
-                  M
+        <div className="conversation">
+          <div className="conversation-inner">
+            {!hasStartedConversation && (
+              <section className="welcome-panel" aria-labelledby="welcome-title">
+                <p className="eyebrow">
+                  <span />
+                  Sentient intelligence system
+                </p>
+                <h1 id="welcome-title">
+                  Intelligence built
+                  <br />
+                  for consequential work.
+                </h1>
+                <p className="welcome-copy">
+                  Reason through complexity, synthesize critical information,
+                  and move from question to action with confidence.
+                </p>
+                <div className="prompt-grid">
+                  {prompts.map((item) => (
+                    <button
+                      className="prompt-card"
+                      key={item.index}
+                      onClick={() => void submitMessage(item.prompt)}
+                      type="button"
+                    >
+                      <span className="prompt-index">{item.index}</span>
+                      <strong>{item.title}</strong>
+                      <span>{item.detail}</span>
+                      <span className="prompt-arrow" aria-hidden="true">
+                        ↗
+                      </span>
+                    </button>
+                  ))}
                 </div>
-              )}
-              <div
-                className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-[15px] leading-6 sm:max-w-[75%] ${
-                  message.role === "user"
-                    ? "rounded-tr-sm bg-[#1f4d38] text-white"
-                    : "rounded-tl-sm bg-[#edf0eb] text-[#263129]"
-                }`}
-              >
-                {message.content}
-              </div>
-            </article>
-          ))}
-          {isLoading && (
-            <div className="flex items-center gap-3">
-              <div className="flex size-7 items-center justify-center rounded-full bg-[#dbe8da] font-serif text-sm text-[#29533e]">
-                M
-              </div>
-              <div className="flex gap-1 rounded-2xl rounded-tl-sm bg-[#edf0eb] px-4 py-4" aria-label="Michael is thinking">
-                <span className="size-1.5 animate-bounce rounded-full bg-[#738278] [animation-delay:-0.2s]" />
-                <span className="size-1.5 animate-bounce rounded-full bg-[#738278] [animation-delay:-0.1s]" />
-                <span className="size-1.5 animate-bounce rounded-full bg-[#738278]" />
-              </div>
-            </div>
-          )}
-        </section>
+              </section>
+            )}
 
-        <form className="border-t border-[#e1e5dd] p-4 sm:p-5" onSubmit={sendMessage}>
-          <label className="sr-only" htmlFor="prompt">
-            Message Michael
-          </label>
-          <div className="flex items-end gap-3 rounded-2xl border border-[#cfd7cd] bg-white p-2 pl-4 focus-within:border-[#5c8265] focus-within:ring-2 focus-within:ring-[#dce9dc]">
+            <section
+              className={`message-stream ${
+                hasStartedConversation ? "message-stream-active" : ""
+              }`}
+              aria-live="polite"
+              aria-label="Conversation with Sentient AI"
+            >
+              {messages.map((message) => (
+                <article
+                  className={`message-row message-${message.role}`}
+                  key={message.id}
+                >
+                  <div className="message-identity">
+                    {message.role === "model" ? (
+                      <div className="sentient-avatar" aria-hidden="true">
+                        <span />
+                      </div>
+                    ) : (
+                      <div className="user-avatar" aria-hidden="true">
+                        Y
+                      </div>
+                    )}
+                    <div>
+                      <strong>
+                        {message.role === "model" ? "Sentient AI" : "You"}
+                      </strong>
+                      <span>
+                        {message.role === "model" ? "Intelligence system" : "Operator"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="message-content">{message.content}</div>
+                </article>
+              ))}
+
+              {isLoading && (
+                <article className="message-row message-model">
+                  <div className="message-identity">
+                    <div className="sentient-avatar" aria-hidden="true">
+                      <span />
+                    </div>
+                    <div>
+                      <strong>Sentient AI</strong>
+                      <span>Processing</span>
+                    </div>
+                  </div>
+                  <div className="thinking-state" aria-label="Sentient AI is thinking">
+                    <span />
+                    <span />
+                    <span />
+                    <p>Reasoning through your request</p>
+                  </div>
+                </article>
+              )}
+              <div ref={endOfConversationRef} />
+            </section>
+          </div>
+        </div>
+
+        <div className="composer-zone">
+          <form className="composer" onSubmit={sendMessage}>
+            <label className="sr-only" htmlFor="prompt">
+              Message Sentient AI
+            </label>
             <textarea
-              className="max-h-32 min-h-11 flex-1 resize-none bg-transparent py-2 text-[15px] leading-6 outline-none placeholder:text-[#849088]"
               id="prompt"
               onChange={(event) => setPrompt(event.target.value)}
-              placeholder="Ask Michael anything..."
+              onKeyDown={handleComposerKeyDown}
+              placeholder="Ask Sentient AI to analyze, plan, or create…"
               rows={1}
               value={prompt}
             />
-            <button
-              aria-label="Send message"
-              className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#1f4d38] text-white transition hover:bg-[#163b2b] disabled:cursor-not-allowed disabled:opacity-45"
-              disabled={!prompt.trim() || isLoading}
-              type="submit"
-            >
-              <svg aria-hidden="true" fill="none" height="19" viewBox="0 0 24 24" width="19">
-                <path d="m5 12 14-7-5 14-2-5-5-2Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
-              </svg>
-            </button>
-          </div>
-          <p className="px-1 pt-3 text-center text-xs text-[#7a857d]">MICHAEL can make mistakes. Check important information.</p>
-        </form>
-      </div>
+            <div className="composer-controls">
+              <div className="composer-meta">
+                <span>Gemini runtime</span>
+                <span className="meta-divider" />
+                <span>Server-side access</span>
+              </div>
+              <button
+                aria-label="Send message"
+                className="send-button"
+                disabled={!prompt.trim() || isLoading}
+                type="submit"
+              >
+                <span>Send</span>
+                <span aria-hidden="true">↑</span>
+              </button>
+            </div>
+          </form>
+          <p className="composer-note">
+            Sentient AI can make mistakes. Verify critical decisions and outputs.
+          </p>
+        </div>
+      </section>
     </main>
   );
 }

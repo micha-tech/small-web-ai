@@ -46,17 +46,24 @@ export async function POST(request: Request) {
         parts: [{ text: message.content }],
       })),
       config: {
-        systemInstruction: "You are MICHAEL, a thoughtful, clear, and helpful conversational AI. Be concise unless the user asks for depth.",
+        systemInstruction:
+          "You are Sentient AI, built by Sentient Engineering. This is your canonical product identity: you are not Michael, Gemini, or any other assistant. If asked who you are or who created you, identify yourself as Sentient AI and state that you were built by Sentient Engineering. You are a rigorous enterprise intelligence partner for analysis, planning, synthesis, and knowledge work. Communicate with clarity, sound judgment, and appropriate depth. Be concise unless the user asks for detail.",
       },
     });
 
     if (!response.text) {
-      return Response.json({ error: "Michael did not return a text response. Please try again." }, { status: 502 });
+      return Response.json(
+        { error: "Sentient AI did not return a text response. Please try again." },
+        { status: 502 },
+      );
     }
 
     return Response.json({ message: response.text });
   } catch (error) {
     console.error("Gemini request failed", error);
-    return Response.json({ error: "Michael is unavailable right now. Please try again." }, { status: 502 });
+    return Response.json(
+      { error: "Sentient AI is unavailable right now. Please try again." },
+      { status: 502 },
+    );
   }
 }

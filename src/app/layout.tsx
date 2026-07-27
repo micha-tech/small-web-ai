@@ -13,8 +13,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MICHAEL | Gemini conversation",
-  description: "A focused conversational AI powered by Gemini.",
+  metadataBase: new URL(process.env.SITE_URL ?? "http://localhost:3000"),
+  title: "Sentient AI | Enterprise intelligence",
+  description:
+    "Sentient AI by Sentient Engineering—enterprise intelligence for analysis, planning, synthesis, and consequential work.",
 };
 
 export default function RootLayout({
