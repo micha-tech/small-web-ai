@@ -15,21 +15,25 @@ type Message = {
   content: string;
 };
 
+type RequestState = "idle" | "waiting" | "streaming";
+
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [prompt, setPrompt] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [requestState, setRequestState] = useState<RequestState>("idle");
   const endOfConversationRef = useRef<HTMLDivElement>(null);
+  const isBusy = requestState !== "idle";
 
   useEffect(() => {
     endOfConversationRef.current?.scrollIntoView({
-      behavior: messages.length > 1 ? "smooth" : "auto",
+      behavior:
+        requestState === "streaming" || messages.length <= 1 ? "auto" : "smooth",
     });
-  }, [isLoading, messages]);
+  }, [messages, requestState]);
 
   async function submitMessage(content: string) {
     const nextPrompt = content.trim();
-    if (!nextPrompt || isLoading) {
+    if (!nextPrompt || isBusy) {
       return;
     }
 
@@ -42,7 +46,11 @@ export default function Home() {
 
     setMessages(nextMessages);
     setPrompt("");
-    setIsLoading(true);
+    setRequestState("waiting");
+
+    const assistantMessageId = Date.now() + 1;
+    let streamedContent = "";
+    let assistantMessageCreated = false;
 
     try {
       const response = await fetch("/api/chat", {
@@ -56,34 +64,88 @@ export default function Home() {
         }),
       });
 
-      const result = (await response.json()) as {
-        error?: string;
-        message?: string;
-      };
-
-      const reply = result.message;
-      if (!response.ok || !reply) {
-        throw new Error(result.error || "Sentient AI could not respond just now.");
+      if (!response.ok) {
+        const result = (await response.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        throw new Error(
+          result?.error || "Sentient AI could not respond just now.",
+        );
       }
 
-      setMessages((currentMessages) => [
-        ...currentMessages,
-        { id: Date.now() + 1, role: "model", content: reply },
-      ]);
+      if (!response.body) {
+        throw new Error("Sentient AI returned an unreadable response.");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        const nextChunk = decoder.decode(value, { stream: !done });
+
+        if (nextChunk) {
+          streamedContent += nextChunk;
+
+          if (!assistantMessageCreated) {
+            assistantMessageCreated = true;
+            setRequestState("streaming");
+            setMessages((currentMessages) => [
+              ...currentMessages,
+              {
+                id: assistantMessageId,
+                role: "model",
+                content: streamedContent,
+              },
+            ]);
+          } else {
+            setMessages((currentMessages) =>
+              currentMessages.map((message) =>
+                message.id === assistantMessageId
+                  ? { ...message, content: streamedContent }
+                  : message,
+              ),
+            );
+          }
+        }
+
+        if (done) {
+          break;
+        }
+      }
+
+      if (!streamedContent.trim()) {
+        throw new Error("Sentient AI did not return a text response.");
+      }
     } catch (error) {
-      setMessages((currentMessages) => [
-        ...currentMessages,
-        {
-          id: Date.now() + 1,
-          role: "model",
-          content:
-            error instanceof Error
-              ? error.message
-              : "Sentient AI could not respond just now.",
-        },
-      ]);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Sentient AI could not respond just now.";
+
+      if (assistantMessageCreated) {
+        setMessages((currentMessages) =>
+          currentMessages.map((message) =>
+            message.id === assistantMessageId
+              ? {
+                  ...message,
+                  content: `${streamedContent}\n\nResponse interrupted. Please try again.`,
+                }
+              : message,
+          ),
+        );
+      } else {
+        setMessages((currentMessages) => [
+          ...currentMessages,
+          {
+            id: assistantMessageId,
+            role: "model",
+            content: errorMessage,
+          },
+        ]);
+      }
     } finally {
-      setIsLoading(false);
+      setRequestState("idle");
     }
   }
 
@@ -115,6 +177,7 @@ export default function Home() {
           </div>
           <button
             className="new-chat"
+            disabled={isBusy}
             onClick={() => {
               setMessages([]);
               setPrompt("");
@@ -127,7 +190,11 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="chat" aria-label="Conversation with Sentient AI">
+      <section
+        aria-busy={isBusy}
+        aria-label="Conversation with Sentient AI"
+        className="chat"
+      >
         <div className="chat-inner">
           {messages.length === 0 ? (
             <section className="welcome" aria-labelledby="welcome-title">
@@ -142,9 +209,15 @@ export default function Home() {
             </section>
           ) : (
             <div className="messages" aria-live="polite">
-              {messages.map((message) => (
+              {messages.map((message, index) => (
                 <article
-                  className={`message message-${message.role}`}
+                  className={`message message-${message.role} ${
+                    requestState === "streaming" &&
+                    index === messages.length - 1 &&
+                    message.role === "model"
+                      ? "message-streaming"
+                      : ""
+                  }`}
                   key={message.id}
                 >
                   {message.role === "model" && (
@@ -159,7 +232,7 @@ export default function Home() {
                 </article>
               ))}
 
-              {isLoading && (
+              {requestState === "waiting" && (
                 <article className="message message-model">
                   <span className="message-avatar" aria-hidden="true">
                     S
@@ -197,7 +270,7 @@ export default function Home() {
             <span>Enter to send · Shift + Enter for a new line</span>
             <button
               aria-label="Send message"
-              disabled={!prompt.trim() || isLoading}
+              disabled={!prompt.trim() || isBusy}
               type="submit"
             >
               ↑

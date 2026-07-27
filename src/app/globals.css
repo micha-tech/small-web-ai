@@ -125,6 +125,11 @@ textarea:focus-visible {
   background: var(--surface-muted);
 }
 
+.new-chat:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .new-chat span {
   color: var(--muted);
   font-size: 17px;
@@ -222,6 +227,18 @@ textarea:focus-visible {
   color: #3f403d;
 }
 
+.message-streaming p::after {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 14px;
+  margin-left: 3px;
+  border-radius: 1px;
+  background: #8b8c86;
+  vertical-align: -2px;
+  animation: cursor-blink 0.9s ease-in-out infinite;
+}
+
 .message-user {
   justify-content: flex-end;
 }
@@ -264,6 +281,17 @@ textarea:focus-visible {
   }
   30% {
     opacity: 1;
+  }
+}
+
+@keyframes cursor-blink {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  55%,
+  100% {
+    opacity: 0;
   }
 }
 

@@ -39,7 +39,7 @@ export async function POST(request: Request) {
 
   try {
     const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
+    const response = await ai.models.generateContentStream({
       model: "gemini-flash-latest",
       contents: messages.map((message) => ({
         role: message.role,
@@ -51,14 +51,41 @@ export async function POST(request: Request) {
       },
     });
 
-    if (!response.text) {
-      return Response.json(
-        { error: "Sentient AI did not return a text response. Please try again." },
-        { status: 502 },
-      );
-    }
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        let hasText = false;
 
-    return Response.json({ message: response.text });
+        try {
+          for await (const chunk of response) {
+            if (chunk.text) {
+              hasText = true;
+              controller.enqueue(encoder.encode(chunk.text));
+            }
+          }
+
+          if (!hasText) {
+            controller.error(
+              new Error("Gemini completed without returning text."),
+            );
+            return;
+          }
+
+          controller.close();
+        } catch (error) {
+          console.error("Gemini stream failed", error);
+          controller.error(error);
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Cache-Control": "no-cache, no-transform",
+        "Content-Type": "text/plain; charset=utf-8",
+        "X-Accel-Buffering": "no",
+      },
+    });
   } catch (error) {
     console.error("Gemini request failed", error);
     return Response.json(
