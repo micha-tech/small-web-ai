@@ -33,7 +33,11 @@ export async function POST(request: Request) {
   const body: unknown = await request.json().catch(() => null);
   const messages = body && typeof body === "object" ? (body as { messages?: unknown }).messages : undefined;
 
-  if (!Array.isArray(messages) || messages.length === 0 || messages.length > 20 || !messages.every(isChatMessage)) {
+  if (
+    !Array.isArray(messages) ||
+    messages.length === 0 ||
+    !messages.every(isChatMessage)
+  ) {
     return Response.json({ error: "Please send a valid conversation." }, { status: 400 });
   }
 
