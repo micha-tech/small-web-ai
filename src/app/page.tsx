@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import Image from "next/image";
 
 type Message = {
   id: number;
@@ -103,13 +104,14 @@ export default function Home() {
       <header className="header">
         <div className="header-inner">
           <div className="brand">
-            <span className="brand-mark" aria-hidden="true">
-              S
-            </span>
-            <div>
-              <strong>Sentient AI</strong>
-              <span>by Sentient Engineering</span>
-            </div>
+            <Image
+              alt="Sentient Engineering"
+              className="brand-logo"
+              height={279}
+              preload
+              src="/sentient-engineering-logo.png"
+              width={1268}
+            />
           </div>
           <button
             className="new-chat"

@@ -86,7 +86,6 @@ textarea:focus-visible {
   gap: 11px;
 }
 
-.brand-mark,
 .welcome-mark,
 .message-avatar {
   display: grid;
@@ -96,27 +95,12 @@ textarea:focus-visible {
   font-weight: 600;
 }
 
-.brand-mark {
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
-  font-size: 13px;
-}
-
-.brand > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.brand strong {
-  font-size: 14px;
-  letter-spacing: -0.015em;
-}
-
-.brand div span {
-  color: var(--muted);
-  font-size: 10px;
+.brand-logo {
+  display: block;
+  width: 190px;
+  height: auto;
+  filter: brightness(0);
+  opacity: 0.92;
 }
 
 .new-chat {
@@ -385,8 +369,8 @@ textarea:focus-visible {
     padding: 0 16px;
   }
 
-  .brand div span {
-    display: none;
+  .brand-logo {
+    width: 166px;
   }
 
   .chat-inner {
