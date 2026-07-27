@@ -196,43 +196,6 @@ textarea:focus-visible {
   line-height: 1.6;
 }
 
-.suggestions {
-  display: grid;
-  width: min(100%, 560px);
-  gap: 8px;
-  margin-top: 36px;
-}
-
-.suggestions button {
-  display: flex;
-  min-height: 48px;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  border: 1px solid var(--border);
-  border-radius: 11px;
-  background: rgba(255, 255, 255, 0.72);
-  cursor: pointer;
-  color: #474844;
-  font-size: 13px;
-  text-align: left;
-  transition:
-    border-color 160ms ease,
-    background 160ms ease,
-    transform 160ms ease;
-}
-
-.suggestions button:hover {
-  border-color: var(--border-strong);
-  background: var(--surface);
-  transform: translateY(-1px);
-}
-
-.suggestions button span {
-  color: #9a9a94;
-  font-size: 16px;
-}
-
 .messages {
   display: grid;
   gap: 34px;
@@ -433,10 +396,6 @@ textarea:focus-visible {
   .welcome {
     justify-content: flex-start;
     padding-top: 10vh;
-  }
-
-  .suggestions {
-    margin-top: 30px;
   }
 
   .composer-area {

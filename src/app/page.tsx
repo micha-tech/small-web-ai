@@ -14,24 +14,6 @@ type Message = {
   content: string;
 };
 
-const suggestions = [
-  {
-    label: "Think through a decision",
-    prompt:
-      "Help me think through an important decision. Start by asking for the context and constraints.",
-  },
-  {
-    label: "Create an action plan",
-    prompt:
-      "Help me turn an objective into a clear action plan. Ask me for the goal and timeline first.",
-  },
-  {
-    label: "Summarize information",
-    prompt:
-      "Help me turn a set of information into a concise executive summary. Ask me to share the material.",
-  },
-];
-
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [prompt, setPrompt] = useState("");
@@ -155,18 +137,6 @@ export default function Home() {
                 Ask a question, explore an idea, or work through something
                 complex.
               </p>
-              <div className="suggestions">
-                {suggestions.map((suggestion) => (
-                  <button
-                    key={suggestion.label}
-                    onClick={() => void submitMessage(suggestion.prompt)}
-                    type="button"
-                  >
-                    {suggestion.label}
-                    <span aria-hidden="true">→</span>
-                  </button>
-                ))}
-              </div>
             </section>
           ) : (
             <div className="messages" aria-live="polite">
